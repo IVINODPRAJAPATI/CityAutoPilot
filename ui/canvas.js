@@ -5,7 +5,7 @@ window.Canvas = (function() {
   let cellObjects = [];
   const gridSize = 20;
   const cellSize = 1;
-  const gap = 0.04;
+  const gap = 0.7; // Massive true-to-life building separation
   
   // Weather & Effects
   let rainSystem = null; // using LineSegments for beautiful cinematic streaks
@@ -101,7 +101,7 @@ window.Canvas = (function() {
 
     const aspect = window.innerWidth / window.innerHeight;
     camera = new THREE.PerspectiveCamera(40, aspect, 0.1, 1000);
-    camera.position.set(-20, 25, 30);
+    camera.position.set(-30, 45, 50);
 
     renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -156,9 +156,9 @@ window.Canvas = (function() {
 
     scene.add(gridGroup);
     
-    // Base Ground 
-    const groundGeo = new THREE.PlaneGeometry(100, 100);
-    const groundMat = new THREE.MeshStandardMaterial({ color: 0x4b702e, roughness: 1 });
+    // Base Asphalt Ground connecting the blocks
+    const groundGeo = new THREE.PlaneGeometry(120, 120);
+    const groundMat = matRoad; // Continuous asphalt instead of rural grass
     const ground = new THREE.Mesh(groundGeo, groundMat);
     ground.rotation.x = -Math.PI/2;
     ground.position.y = -0.01;
