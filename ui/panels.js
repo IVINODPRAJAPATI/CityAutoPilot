@@ -1,37 +1,5 @@
 window.Panels = (function() {
-  let chartInstance = null;
-  let chartData = [];
-
   function init() {
-    const ctx = document.getElementById('score-chart');
-    if (!ctx) return;
-    
-    chartInstance = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: [],
-        datasets: [{
-          label: 'Health Score',
-          data: chartData,
-          borderColor: '#30D158',
-          backgroundColor: 'rgba(48, 209, 88, 0.2)',
-          fill: true,
-          tension: 0.4
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false }
-        },
-        scales: {
-          x: { display: false },
-          y: { min: 0, max: 100 }
-        }
-      }
-    });
-
     const budgetSlider = document.getElementById('budget-slider');
     const budgetDisplay = document.getElementById('budget-display');
     if (budgetSlider && budgetDisplay) {
@@ -60,12 +28,6 @@ window.Panels = (function() {
     document.getElementById('val-energy').textContent = `${(metrics.energyLoad || 0).toFixed(0)} kWh`;
     document.getElementById('val-biodiv').textContent = (metrics.biodiversity || 0).toFixed(2);
     document.getElementById('val-budget').textContent = `${(metrics.budgetUsed || 0).toFixed(1)} / ${totalBudget || 25}`;
-
-    chartData.push(metrics.healthScore || 0);
-    if (chartInstance) {
-      chartInstance.data.labels = chartData.map((_, idx) => `Iter ${idx+1}`);
-      chartInstance.update();
-    }
   }
 
   function updateHealthScore(oldVal, newVal) {
@@ -137,11 +99,7 @@ window.Panels = (function() {
   }
 
   function resetChart() {
-    chartData = [];
-    if(chartInstance) {
-      chartInstance.data.labels = [];
-      chartInstance.update();
-    }
+    // No-op - chart removed
   }
 
   return { init, updateMetrics, updateHealthScore, showExplanation, hideExplanation, resetChart };

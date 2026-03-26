@@ -1,77 +1,95 @@
-window.MetricsEngine = (function() {
-  let obs = {
-    maxTemp: -Infinity, minTemp: Infinity,
-    maxFlood: -Infinity, minFlood: Infinity,
-    maxEnergy: -Infinity, minEnergy: Infinity
+window.MetricsEngine = (function () {
+
+  // PHASE 3: FIXED ABSOLUTE CLIMATE RANGES — never shift with run data.
+  // Based on Chennai urban climate reality (T. Nagar).
+  const FIXED = {
+    TEMP_MIN:    25,   // best-case with full vegetation
+    TEMP_MAX:    45,   // extreme Chennai summer peak
+    FLOOD_MIN:   0,
+    FLOOD_MAX:   1.0,  // fully inundated cell
+    ENERGY_MIN:  0,
+    ENERGY_MAX:  2000, // peak city-wide AC load (kWh)
+    BIO_MIN:     0,
+    BIO_MAX:     1
   };
 
   function compute(grid) {
-    let sumTemp = 0;
-    let sumFlood = 0;
-    let sumEnergy = 0;
-    let totalCost = 0;
-    const n = 20 * 20;
-
-    for (let i = 0; i < 20; i++) {
-        for (let j = 0; j < 20; j++) {
-            const cell = grid[i][j];
-            sumTemp += cell.temp || 0;
-            sumFlood += cell.water || 0;
-            sumEnergy += cell.energyLoad || 0;
-            totalCost += cell.cost || 0;
-        }
+    if (!grid || !grid.length) {
+      return { avgTemp: 32, floodRisk: 0, energyLoad: 0, biodiversity: 0, budgetUsed: 0, healthScore: 50 };
     }
 
-    const avgTemp = sumTemp / n;
-    const floodRisk = sumFlood / n; 
-    const energyLoad = sumEnergy;
-    const biodiversity = window.SimulationEngine.runBiodiversity(grid);
+    let sumTemp = 0, sumFlood = 0, sumEnergy = 0, totalCost = 0;
+    const n = grid.length * grid[0].length;
 
-    obs.maxTemp = Math.max(obs.maxTemp, avgTemp);
-    obs.minTemp = Math.min(obs.minTemp, avgTemp);
-    obs.maxFlood = Math.max(obs.maxFlood, floodRisk);
-    obs.minFlood = Math.min(obs.minFlood, floodRisk);
-    obs.maxEnergy = Math.max(obs.maxEnergy, energyLoad);
-    obs.minEnergy = Math.min(obs.minEnergy, energyLoad);
+    for (let i = 0; i < grid.length; i++) {
+      for (let j = 0; j < grid[i].length; j++) {
+        const cell = grid[i][j];
+        sumTemp    += (cell.temp        || 0);
+        sumFlood   += (cell.water       || 0);
+        sumEnergy  += (cell.energyLoad  || 0);
+        totalCost  += (cell.cost        || 0);
+      }
+    }
+
+    const avgTemp     = sumTemp  / n;
+    const floodRisk   = sumFlood / n;
+    const energyLoad  = sumEnergy;
+    const biodiversity = window.SimulationEngine ? window.SimulationEngine.runBiodiversity(grid) : 0;
 
     const metrics = {
-      avgTemp: avgTemp,
-      floodRisk: floodRisk,
-      energyLoad: energyLoad,
-      biodiversity: biodiversity,
+      avgTemp,
+      floodRisk,
+      energyLoad,
+      biodiversity,
       budgetUsed: totalCost,
-      get healthScore() { return healthScore(this); }
+      get healthScore() { return _healthScore(this); }
     };
-    
+
     return metrics;
   }
 
-  function getObserved() {
-    return obs; // useful for debugging
-  }
+  // PHASE 4: rainMode caps flood contribution so it can't destroy the score.
+  function _healthScore(metrics, rainMode = false) {
+    let normTemp   = (metrics.avgTemp    - FIXED.TEMP_MIN)   / (FIXED.TEMP_MAX   - FIXED.TEMP_MIN);
+    let normFlood  = (metrics.floodRisk  - FIXED.FLOOD_MIN)  / (FIXED.FLOOD_MAX  - FIXED.FLOOD_MIN);
+    let normEnergy = (metrics.energyLoad - FIXED.ENERGY_MIN) / (FIXED.ENERGY_MAX - FIXED.ENERGY_MIN);
+    let normBio    = metrics.biodiversity;
 
-  function healthScore(metrics) {
-    let normTemp = obs.maxTemp > obs.minTemp ? (metrics.avgTemp - obs.minTemp) / (obs.maxTemp - obs.minTemp) : 0.3;
-    let normFlood = obs.maxFlood > obs.minFlood ? (metrics.floodRisk - obs.minFlood) / (obs.maxFlood - obs.minFlood) : 0.3;
-    let normEnergy = obs.maxEnergy > obs.minEnergy ? (metrics.energyLoad - obs.minEnergy) / (obs.maxEnergy - obs.minEnergy) : 0.3;
-    let normBio = metrics.biodiversity || 0;
-
-    normTemp = Math.max(0, Math.min(1, normTemp));
-    normFlood = Math.max(0, Math.min(1, normFlood));
+    // Clamp all to [0, 1]
+    normTemp   = Math.max(0, Math.min(1, normTemp));
+    normFlood  = Math.max(0, Math.min(1, normFlood));
     normEnergy = Math.max(0, Math.min(1, normEnergy));
-    normBio = Math.max(0, Math.min(1, normBio));
-    
-    // 3. Fix Energy Dominance: Soft scaling
+    normBio    = Math.max(0, Math.min(1, normBio));
+
+    // PHASE 4 — cap flood contribution during rain to prevent score collapse
+    if (rainMode) normFlood = Math.min(normFlood, 0.8);
+
+    // Dampen energy dominance  
     normEnergy = Math.pow(normEnergy, 0.5);
 
-    let score = 100 - (
-      normTemp * 30 +
-      normFlood * 30 +
+    const raw = 100 - (
+      normTemp   * 30 +
+      normFlood  * 30 +
       normEnergy * 20 +
       (1 - normBio) * 20
     );
 
-    return Math.max(0, Math.min(100, Math.round(score)));
+    // PHASE 3: Floor at 20 — score NEVER collapses below 20
+    return Math.max(20, Math.min(100, Math.round(raw)));
+  }
+
+  // Exposed public API — rainMode flag for rainfall page
+  function healthScore(metrics, rainMode = false) {
+    return _healthScore(metrics, rainMode);
+  }
+
+  // Backward-compat: optimizer still calls getObserved()
+  function getObserved() {
+    return {
+      maxTemp: FIXED.TEMP_MAX, minTemp: FIXED.TEMP_MIN,
+      maxFlood: FIXED.FLOOD_MAX, minFlood: FIXED.FLOOD_MIN,
+      maxEnergy: FIXED.ENERGY_MAX, minEnergy: FIXED.ENERGY_MIN
+    };
   }
 
   return { compute, healthScore, getObserved };

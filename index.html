@@ -1,13 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CityAutoPilot v3 - 3D Dashboard</title>
-  
+
   <!-- CDNs -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
@@ -27,7 +28,9 @@
       --font-family: 'Inter', system-ui, -apple-system, sans-serif;
     }
 
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
 
     body {
       margin: 0;
@@ -37,7 +40,8 @@
       font-family: var(--font-family);
       width: 100vw;
       height: 100vh;
-      overflow: hidden; /* Canvas covers background */
+      overflow: hidden;
+      /* Canvas covers background */
     }
 
     /* Full-screen absolute canvas container */
@@ -59,8 +63,13 @@
     }
 
     /* Override leaflet default controls for premium feel */
-    .leaflet-control-container .leaflet-routing-container { display: none; }
-    .leaflet-bar { border: none !important; }
+    .leaflet-control-container .leaflet-routing-container {
+      display: none;
+    }
+
+    .leaflet-bar {
+      border: none !important;
+    }
 
     /* UI Overlay Layer */
     .app-layer {
@@ -72,7 +81,8 @@
       z-index: 10;
       display: flex;
       flex-direction: column;
-      pointer-events: none; /* Let clicks pass through to canvas natively */
+      pointer-events: none;
+      /* Let clicks pass through to canvas natively */
     }
 
     header {
@@ -81,23 +91,28 @@
       align-items: center;
       padding: 20px 40px;
       pointer-events: auto;
-      background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%);
+      background: linear-gradient(180deg, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0) 100%);
     }
 
     header h1 {
       margin: 0;
-      font-size: 2rem;
-      font-weight: 800;
-      letter-spacing: 1px;
-      background: linear-gradient(90deg, #0A84FF, #30D158, #0A84FF);
+      font-size: 2.4rem;
+      font-weight: 900;
+      letter-spacing: -1px;
+      text-transform: uppercase;
+      background: linear-gradient(90deg, #00FF41, #00E5FF, #0A84FF);
       background-size: 200% auto;
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-      animation: shine 4s linear infinite;
+      animation: shine 3s linear infinite;
+      text-shadow: 0 0 30px rgba(0, 255, 65, 0.3);
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
     }
 
     @keyframes shine {
-      to { background-position: 200% center; }
+      to {
+        background-position: 200% center;
+      }
     }
 
     .health-score {
@@ -106,7 +121,7 @@
       display: flex;
       align-items: center;
       gap: 15px;
-      background: rgba(0,0,0,0.4);
+      background: rgba(0, 0, 0, 0.4);
       padding: 10px 25px;
       border-radius: 30px;
       border: 1px solid var(--border-color);
@@ -124,9 +139,24 @@
       justify-content: space-between;
       padding: 0 40px 40px 40px;
       gap: 40px;
-      min-height: 0; /* Ensures flex kids can scroll if needed */
+      min-height: 0;
+      /* Ensures flex kids can scroll if needed */
     }
 
+    /* Fix Tooltip Overflows & Style */
+    .custom-tooltip {
+      background: rgba(15, 15, 20, 0.95) !important;
+      border: 1px solid rgba(255, 255, 255, 0.25) !important;
+      color: #fff !important;
+      border-radius: 12px !important;
+      padding: 0 !important;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.8) !important;
+      overflow: hidden !important;
+      max-width: 250px !important;
+      white-space: normal !important;
+      word-wrap: break-word !important;
+      overflow-wrap: break-word !important;
+    }
     .panel {
       pointer-events: auto;
       background: var(--panel-bg);
@@ -142,9 +172,18 @@
     }
 
     /* Scrollbar minimalist */
-    .panel::-webkit-scrollbar { width: 6px; }
-    .panel::-webkit-scrollbar-track { background: transparent; }
-    .panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+    .panel::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .panel::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .panel::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 10px;
+    }
 
     .controls-panel {
       width: 320px;
@@ -183,13 +222,13 @@
       padding: 12px 16px;
       border-radius: 12px;
       transition: all 0.3s;
-      background: rgba(255,255,255,0.03);
+      background: rgba(255, 255, 255, 0.03);
       border: 1px solid transparent;
     }
 
     .radio-group label:hover {
-      background: rgba(255,255,255,0.08);
-      border-color: rgba(255,255,255,0.2);
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.2);
       transform: translateX(5px);
     }
 
@@ -203,7 +242,7 @@
     .slider-group {
       margin-bottom: 40px;
       padding: 15px;
-      background: rgba(0,0,0,0.2);
+      background: rgba(0, 0, 0, 0.2);
       border-radius: 12px;
     }
 
@@ -218,11 +257,12 @@
     input[type="range"] {
       width: 100%;
       height: 6px;
-      background: rgba(255,255,255,0.2);
+      background: rgba(255, 255, 255, 0.2);
       border-radius: 3px;
       outline: none;
       -webkit-appearance: none;
     }
+
     input[type="range"]::-webkit-slider-thumb {
       -webkit-appearance: none;
       width: 20px;
@@ -255,12 +295,15 @@
       gap: 8px;
     }
 
-    .btn:active { transform: scale(0.96); }
+    .btn:active {
+      transform: scale(0.96);
+    }
 
     .btn.primary {
       background: linear-gradient(135deg, #0A84FF, #0044b3);
       box-shadow: 0 8px 20px rgba(10, 132, 255, 0.3);
     }
+
     .btn.primary:hover {
       background: linear-gradient(135deg, #2A9dFF, #005ce6);
       box-shadow: 0 12px 25px rgba(10, 132, 255, 0.5);
@@ -271,6 +314,7 @@
       background: linear-gradient(135deg, #FF9500, #d35400);
       box-shadow: 0 8px 20px rgba(255, 149, 0, 0.3);
     }
+
     .btn.warning:hover {
       background: linear-gradient(135deg, #ffa520, #e67e22);
       box-shadow: 0 12px 25px rgba(255, 149, 0, 0.5);
@@ -278,45 +322,47 @@
     }
 
     .btn.secondary {
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
+
     .btn.secondary:hover {
-      background: rgba(255,255,255,0.1);
+      background: rgba(255, 255, 255, 0.1);
       transform: translateY(-2px);
     }
 
     .metric-card {
-      background: rgba(0,0,0,0.3);
+      background: rgba(0, 0, 0, 0.3);
       padding: 18px 20px;
       border-radius: 12px;
       margin-bottom: 15px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      border: 1px solid rgba(255,255,255,0.05);
+      border: 1px solid rgba(255, 255, 255, 0.05);
       transition: transform 0.2s, background 0.2s;
     }
+
     .metric-card:hover {
-      background: rgba(0,0,0,0.5);
+      background: rgba(0, 0, 0, 0.5);
       transform: scale(1.02);
-      border-color: rgba(255,255,255,0.15);
+      border-color: rgba(255, 255, 255, 0.15);
     }
 
     .metric-card span {
       font-weight: 800;
       font-size: 1.1rem;
-      text-shadow: 0 0 10px rgba(255,255,255,0.2);
+      text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
     }
 
     .chart-container {
       margin-top: 25px;
       height: 220px;
       width: 100%;
-      background: rgba(0,0,0,0.2);
+      background: rgba(0, 0, 0, 0.2);
       border-radius: 12px;
       padding: 10px;
-      border: 1px solid rgba(255,255,255,0.05);
+      border: 1px solid rgba(255, 255, 255, 0.05);
     }
 
     /* Floating 3D Explanation Popup */
@@ -327,7 +373,7 @@
       border-radius: 16px;
       padding: 20px;
       width: 280px;
-      box-shadow: 0 15px 45px rgba(0,0,0,0.7), 0 0 20px rgba(10, 132, 255, 0.2);
+      box-shadow: 0 15px 45px rgba(0, 0, 0, 0.7), 0 0 20px rgba(10, 132, 255, 0.2);
       backdrop-filter: blur(15px);
       z-index: 100;
       pointer-events: auto;
@@ -363,7 +409,7 @@
       position: absolute;
       top: 15px;
       right: 15px;
-      background: rgba(255,255,255,0.1);
+      background: rgba(255, 255, 255, 0.1);
       border: none;
       color: #ccc;
       cursor: pointer;
@@ -386,72 +432,95 @@
     .impact-stats {
       margin-top: 15px;
       padding-top: 15px;
-      border-top: 1px dashed rgba(255,255,255,0.2);
+      border-top: 1px dashed rgba(255, 255, 255, 0.2);
     }
-    
+
     .impact-row {
       display: flex;
       justify-content: space-between;
       margin-bottom: 5px;
       font-weight: 600;
     }
-    .impact-row.good { color: var(--accent-green); }
-    .impact-row.neutral { color: var(--accent-orange); }
+
+    .impact-row.good {
+      color: var(--accent-green);
+    }
+
+    .impact-row.neutral {
+      color: var(--accent-orange);
+    }
 
     .rain-overlay {
       position: fixed;
-      top: 0; left: 0; width: 100vw; height: 100vh;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
       pointer-events: none;
       z-index: 9999;
       background: transparent;
       opacity: 0;
       transition: opacity 0.5s;
     }
+
     .rain-overlay.active {
       background-color: rgba(10, 20, 30, 0.2);
       opacity: 1;
       overflow: hidden;
     }
+
     .rain-overlay.active::after {
       content: "";
       position: absolute;
-      top: -50%; left: -50%;
-      width: 200vw; height: 200vh;
+      top: -50%;
+      left: -50%;
+      width: 200vw;
+      height: 200vh;
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Crect x='10' y='0' width='1' height='15' fill='white' fill-opacity='0.4'/%3E%3Crect x='40' y='30' width='1' height='20' fill='white' fill-opacity='0.2'/%3E%3Crect x='60' y='60' width='1' height='10' fill='white' fill-opacity='0.5'/%3E%3C/svg%3E");
       background-repeat: repeat;
       animation: realisticFall 0.35s linear infinite;
       transform: rotate(12deg);
     }
+
     @keyframes realisticFall {
-      0% { background-position: 0 0; }
-      100% { background-position: -20px 1000px; }
+      0% {
+        background-position: 0 0;
+      }
+
+      100% {
+        background-position: -20px 1000px;
+      }
     }
-    
+
     .flow-line {
       animation: dashFlow 1s linear infinite;
     }
+
     @keyframes dashFlow {
-      to { stroke-dashoffset: -20; }
+      to {
+        stroke-dashoffset: -20;
+      }
     }
 
     .emoji-icon {
-        font-size: 16px;
-        line-height: 20px;
-        text-align: center;
-        filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.8));
+      font-size: 16px;
+      line-height: 20px;
+      text-align: center;
+      filter: drop-shadow(0px 2px 2px rgba(0, 0, 0, 0.8));
     }
 
     .custom-tooltip {
-        background: rgba(0,0,0,0.85);
-        color: #fff;
-        border: 1px solid #30D158;
-        border-radius: 6px;
-        font-family: inherit;
-        font-size: 0.9rem;
-        backdrop-filter: blur(4px);
+      background: rgba(0, 0, 0, 0.85);
+      color: #fff;
+      border: 1px solid #30D158;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      backdrop-filter: blur(4px);
     }
   </style>
 </head>
+
 <body>
 
   <!-- The Live Map Layer -->
@@ -463,7 +532,7 @@
   <!-- The UI Overlay -->
   <div class="app-layer">
     <header>
-      <h1>CityAutoPilot v3</h1>
+      <h1>CityAutoPilot</h1>
       <div class="health-score">
         HEALTH
         <span class="val" id="health-score-val">--</span>
@@ -481,7 +550,7 @@
           <label><input type="radio" name="policy" value="heat"> 🌡️ Heat Reduction</label>
           <label><input type="radio" name="policy" value="eco"> 🌿 Eco Corridor</label>
         </div>
-        
+
         <div class="slider-group">
           <label for="budget-slider"><span>Budget Units</span></label>
           <div class="slider-row">
@@ -507,10 +576,7 @@
         <div class="metric-card">Energy Load <span id="val-energy">--</span></div>
         <div class="metric-card">Biodiversity <span id="val-biodiv">--</span></div>
         <div class="metric-card">Budget Used <span id="val-budget">--</span></div>
-        
-        <div class="chart-container">
-          <canvas id="score-chart"></canvas>
-        </div>
+
       </section>
     </main>
 
@@ -543,4 +609,5 @@
   <script src="main.js"></script>
 
 </body>
+
 </html>
