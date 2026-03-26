@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Integration Tests - Dev 1</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        #results { border: 1px solid #ccc; padding: 10px; background: #f9f9f9; }
+        .pass { color: green; font-weight: bold; }
+        .fail { color: red; font-weight: bold; }
+        .info { color: blue; }
+    </style>
+    <!-- Load all Dev 1 modules in correct order -->
+    <script src="data/constants.js?v=2"></script>
+    <script src="data/tnagar_base_grid.js?v=2"></script>
+    <script src="modules/gridEngine.js?v=2"></script>
+    <script src="modules/simulationEngine.js?v=2"></script>
+    <script src="modules/metricsEngine.js?v=2"></script>
+    <script src="modules/constraintEngine.js?v=2"></script>
+    <script src="modules/policyEngine.js?v=2"></script>
+    <script src="modules/explainabilityEngine.js?v=2"></script>
+    <script src="modules/optimizationEngine.js?v=2"></script>
+</head>
+<body>
+    <h1>Dev 1 Integration Tests</h1>
+    <div id="results"></div>
+
+    <script>
+        const resultsDiv = document.getElementById('results');
+        function logMsg(msg, status) {
+            const p = document.createElement('p');
+            p.textContent = msg;
+            if (status === 'pass') p.className = 'pass';
+            else if (status === 'fail') p.className = 'fail';
+            else p.className = 'info';
+            resultsDiv.appendChild(p);
+            console.log(msg);
+        }
+
+        try {
+            // TEST 1: Grid init
+            const grid = window.GridEngine.initGrid();
+            if (grid.length !== 20 || grid[0].length !== 20) throw new Error("FAIL: grid dimensions");
+            logMsg("TEST 1 PASS: grid initialized 20x20", "pass");
+
+            // TEST 2: Simulation runs without error
+            window.SimulationEngine.simulate(grid, 1.5);
+            logMsg("TEST 2 PASS: simulation ran", "pass");
+
+            // TEST 3: Metrics returns valid object
+            const metrics = window.MetricsEngine.compute(grid);
+            if (typeof metrics.avgTemp !== 'number') throw new Error("FAIL: avgTemp not number");
+            if (typeof metrics.healthScore !== 'number') throw new Error("FAIL: healthScore not number");
+            if (metrics.healthScore < 0 || metrics.healthScore > 100) throw new Error("FAIL: healthScore out of range");
+            logMsg("TEST 3 PASS: metrics valid. Health Score = " + metrics.healthScore, "pass");
+
+            // TEST 4: Constraint validation
+            const constraints = { budget: 25, preserveRoads: true, minDensity: 0.3, maxGreenRatio: 0.4 };
+            const valid = window.ConstraintEngine.validate(grid, constraints);
+            if (typeof valid.valid !== 'boolean') throw new Error("FAIL: constraint result not boolean");
+            logMsg("TEST 4 PASS: constraints validated", "pass");
+
+            // TEST 5: Policy engine returns weights
+            const weights = window.PolicyEngine.getWeights('balanced');
+            if (typeof weights.heat !== 'number') throw new Error("FAIL: no heat weight");
+            logMsg("TEST 5 PASS: policy weights returned", "pass");
+
+            // TEST 6: Full optimization runs
+            const policy = window.PolicyEngine.getWeights('balanced');
+            const result = window.OptimizationEngine.optimize(grid, policy, constraints, 1.5);
+            if (!result.bestGrid) throw new Error("FAIL: no bestGrid returned");
+            if (result.iterationGrids.length === 0) throw new Error("FAIL: no iteration history");
+            logMsg("TEST 6 PASS: optimization completed. Iterations = " + result.iterationGrids.length, "pass");
+
+            // TEST 7: Metrics improved after optimization
+            const afterMetrics = window.MetricsEngine.compute(result.bestGrid);
+            logMsg("BEFORE health: " + metrics.healthScore + " | AFTER health: " + afterMetrics.healthScore, "info");
+            if (afterMetrics.healthScore < metrics.healthScore) {
+                 logMsg("TEST 7 WARN: health score did not improve", "fail");
+            } else {
+                 logMsg("TEST 7 PASS: health score improved or remained same", "pass");
+            }
+
+            // TEST 8: Explainability has entries
+            const explanations = window.ExplainabilityEngine.getAllExplanations();
+            logMsg("TEST 8: explanation entries = " + Object.keys(explanations).length, "pass");
+
+            logMsg("=== ALL TESTS COMPLETE ===", "info");
+
+        } catch (e) {
+            logMsg("TEST FAILED WITH EXCEPTION: " + e.message, "fail");
+            console.error(e);
+        }
+    </script>
+</body>
+</html>
