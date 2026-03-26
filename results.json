@@ -1,0 +1,110 @@
+{
+  "TEST_BALANCED": {
+    "BEFORE_HEALTH": 40,
+    "AFTER_HEALTH": 70,
+    "BEFORE": {
+      "temp": 36.415472081920576,
+      "flood": 0.9129374999999993,
+      "energy": 2042.878291992424,
+      "bio": 0.5
+    },
+    "AFTER": {
+      "temp": 36.415472081920576,
+      "flood": 0.9059062499999994,
+      "energy": 2042.878291992424,
+      "bio": 0.5
+    },
+    "BUDGET_USED": 12,
+    "POLICY": "balanced"
+  },
+  "TEST_DET_2": {
+    "BEFORE_HEALTH": 40,
+    "AFTER_HEALTH": 70,
+    "BEFORE": {
+      "temp": 36.415472081920576,
+      "flood": 0.9129374999999993,
+      "energy": 2042.878291992424,
+      "bio": 0.5
+    },
+    "AFTER": {
+      "temp": 36.415472081920576,
+      "flood": 0.9059062499999994,
+      "energy": 2042.878291992424,
+      "bio": 0.5
+    },
+    "BUDGET_USED": 12,
+    "POLICY": "balanced"
+  },
+  "TEST_DET_3": {
+    "BEFORE_HEALTH": 40,
+    "AFTER_HEALTH": 70,
+    "BEFORE": {
+      "temp": 36.415472081920576,
+      "flood": 0.9129374999999993,
+      "energy": 2042.878291992424,
+      "bio": 0.5
+    },
+    "AFTER": {
+      "temp": 36.415472081920576,
+      "flood": 0.9059062499999994,
+      "energy": 2042.878291992424,
+      "bio": 0.5
+    },
+    "BUDGET_USED": 12,
+    "POLICY": "balanced"
+  },
+  "TEST_FLOOD": {
+    "BEFORE_HEALTH": 40,
+    "AFTER_HEALTH": 70,
+    "BEFORE": {
+      "temp": 36.415472081920576,
+      "flood": 0.9129374999999993,
+      "energy": 2042.878291992424,
+      "bio": 0.5
+    },
+    "AFTER": {
+      "temp": 36.415472081920576,
+      "flood": 0.9059062499999994,
+      "energy": 2042.878291992424,
+      "bio": 0.5
+    },
+    "BUDGET_USED": 12,
+    "POLICY": "flood"
+  },
+  "TEST_HEAT": {
+    "BEFORE_HEALTH": 10,
+    "AFTER_HEALTH": 90,
+    "BEFORE": {
+      "temp": 36.415472081920576,
+      "flood": 0.9129374999999993,
+      "energy": 2042.878291992424,
+      "bio": 0.5
+    },
+    "AFTER": {
+      "temp": 36.35753458192059,
+      "flood": 0.9028124999999992,
+      "energy": 2027.2258797762754,
+      "bio": 0.5
+    },
+    "BUDGET_USED": 24,
+    "POLICY": "heat"
+  },
+  "TEST_ECO": {
+    "BEFORE_HEALTH": 12,
+    "AFTER_HEALTH": 13,
+    "BEFORE": {
+      "temp": 36.415472081920576,
+      "flood": 0.9129374999999993,
+      "energy": 2042.878291992424,
+      "bio": 0.5
+    },
+    "AFTER": {
+      "temp": 36.41950333192058,
+      "flood": 0.9129374999999993,
+      "energy": 2038.084965568112,
+      "bio": 0.5
+    },
+    "BUDGET_USED": 8,
+    "POLICY": "eco"
+  }
+}
