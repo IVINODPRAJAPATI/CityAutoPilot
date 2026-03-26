@@ -14,21 +14,35 @@ window.UIController = (function() {
     }
   }
 
-  function animateOptimization(iterationGrids, appState, onComplete) {
+  function animateOptimization(result, appState, onComplete) {
+    const iterationGrids = result.iterationGrids || [];
+    const finalGrid = result.bestGrid;
+
+    const oldScore = appState.metrics ? (appState.metrics.healthScore || 0) : 0;
+
     if (!iterationGrids || iterationGrids.length === 0) {
+      appState.grid = finalGrid;
+      if (window.MetricsEngine) {
+          appState.metrics = window.MetricsEngine.compute(appState.grid);
+          window.Panels.updateHealthScore(oldScore, appState.metrics.healthScore);
+          
+          console.log("USING GRID:", finalGrid);
+          console.log("BUDGET USED:", appState.metrics.budgetUsed);
+          console.log("FINAL SCORE:", appState.metrics.healthScore);
+      }
+      window.Canvas.drawGrid(appState.grid, true);
       if(onComplete) onComplete();
       return;
     }
 
     let currentIter = 0;
-    const oldScore = appState.metrics ? (appState.metrics.healthScore || 0) : 0;
     
     const timer = setInterval(() => {
       if (currentIter >= iterationGrids.length) {
         clearInterval(timer);
         
         // Ensure final grid is set
-        appState.grid = iterationGrids[iterationGrids.length - 1];
+        appState.grid = finalGrid;
         
         // Final calculations
         if (window.MetricsEngine) {
@@ -40,21 +54,19 @@ window.UIController = (function() {
             
             // Health Score transition animation
             window.Panels.updateHealthScore(oldScore, finalScore);
+            
+            console.log("USING GRID:", finalGrid);
+            console.log("BUDGET USED:", appState.metrics.budgetUsed);
+            console.log("FINAL SCORE:", finalScore);
         }
         
+        window.Canvas.drawGrid(appState.grid, true);
         if (onComplete) onComplete();
         return;
       }
 
       const gridCopy = iterationGrids[currentIter];
       window.Canvas.drawGrid(gridCopy, true);
-      
-      // Update intermediate metrics if available
-      if (window.MetricsEngine) {
-          const tempMetrics = window.MetricsEngine.compute(gridCopy);
-          window.Panels.updateMetrics(tempMetrics, appState.constraints.budget);
-      }
-      
       currentIter++;
     }, 120);
   }
@@ -65,9 +77,13 @@ window.UIController = (function() {
         return;
     }
 
-    const key = `${i}_${j}`;
-    const explanations = window.ExplainabilityEngine.getAllExplanations();
-    const data = explanations ? explanations[key] : null;
+    let data = null;
+    if (window.ExplainabilityEngine.getExplanation) {
+        data = window.ExplainabilityEngine.getExplanation(i, j);
+    } else if (window.ExplainabilityEngine.getAllExplanations) {
+        const expl = window.ExplainabilityEngine.getAllExplanations();
+        data = expl ? expl[`${i}_${j}`] : null;
+    }
 
     window.Panels.showExplanation(clientX, clientY, data);
   }

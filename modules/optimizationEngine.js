@@ -123,9 +123,9 @@ window.OptimizationEngine = (function() {
     
     const iterationGrids = [];
     
-    for (let i = 1; i <= (window.Constants.MAX_ITERATIONS || 25); i++) {
+    for (let i = 1; i <= (window.Constants.MAX_ITERATIONS || 30); i++) {
         let candidate = window.GridEngine.cloneGrid(bestGrid);
-        let worstCells = getWorstCells(candidate, policyWeights, window.Constants.INTERVENTIONS_PER_ITERATION || 8);
+        let worstCells = getWorstCells(candidate, policyWeights, 20); // 20 interventions per pass to densify targets
         let currentBudgetCheck = window.ConstraintEngine.checkBudget(candidate, constraints.budget);
         
         for (const wCell of worstCells) {
@@ -157,7 +157,7 @@ window.OptimizationEngine = (function() {
             accept = true;
         } else {
             let futureCandidate = window.GridEngine.cloneGrid(candidate);
-            let futureWorstCells = getWorstCells(futureCandidate, policyWeights, window.Constants.INTERVENTIONS_PER_ITERATION || 8);
+            let futureWorstCells = getWorstCells(futureCandidate, policyWeights, 20);
             let futureBudgetCheck = window.ConstraintEngine.checkBudget(futureCandidate, constraints.budget);
             
             for (const fwCell of futureWorstCells) {

@@ -62,7 +62,6 @@ window.Panels = (function() {
     document.getElementById('val-budget').textContent = `${(metrics.budgetUsed || 0).toFixed(1)} / ${totalBudget || 25}`;
 
     chartData.push(metrics.healthScore || 0);
-    
     if (chartInstance) {
       chartInstance.data.labels = chartData.map((_, idx) => `Iter ${idx+1}`);
       chartInstance.update();
@@ -75,7 +74,6 @@ window.Panels = (function() {
     
     let start = oldVal || 0;
     let end = newVal || 0;
-    
     if (start === end) {
       el.textContent = end.toFixed(0);
       updateColor(end);
@@ -96,16 +94,9 @@ window.Panels = (function() {
     }, 50);
 
     function updateColor(val) {
-      if (val < 40) {
-        el.style.color = '#FF3B30';
-        indicator.textContent = '🔴';
-      } else if (val < 60) {
-        el.style.color = '#FF9500';
-        indicator.textContent = '🟡';
-      } else {
-        el.style.color = '#30D158';
-        indicator.textContent = '🟢';
-      }
+      if (val < 40) { el.style.color = '#FF3B30'; indicator.textContent = '🔴'; }
+      else if (val < 60) { el.style.color = '#FF9500'; indicator.textContent = '🟡'; }
+      else { el.style.color = '#30D158'; indicator.textContent = '🟢'; }
     }
   }
 
@@ -124,19 +115,14 @@ window.Panels = (function() {
         let impactHtml = "";
         if (data.impact) {
           if (data.impact.tempDrop) impactHtml += `Temp Drop: ${data.impact.tempDrop.toFixed(1)}°C<br>`;
-          if (data.impact.floodReduction) impactHtml += `Flood Reduced: ${data.impact.floodReduction.toFixed(0)}%<br>`;
+          if (data.impact.floodReduction) impactHtml += `Flood Reduced: ${(data.impact.floodReduction*100).toFixed(0)}%<br>`;
           if (data.impact.cost) impactHtml += `Cost: ${data.impact.cost.toFixed(1)}<br>`;
-        } else {
-          impactHtml = "Impact data not provided.";
         }
         document.getElementById('exp-impact').innerHTML = impactHtml;
     }
-
-    // Attempt to keep popup inside window boundaries
+    
     let left = x + 15;
     let top = y + 15;
-    
-    // Quick clamp using approximate widths
     if (left + 250 > window.innerWidth) left = window.innerWidth - 270;
     if (top + 150 > window.innerHeight) top = window.innerHeight - 170;
 
@@ -147,9 +133,7 @@ window.Panels = (function() {
 
   function hideExplanation() {
     const popup = document.getElementById('explanation-popup');
-    if (popup) {
-      popup.classList.remove('visible');
-    }
+    if (popup) popup.classList.remove('visible');
   }
 
   function resetChart() {
@@ -160,12 +144,5 @@ window.Panels = (function() {
     }
   }
 
-  return {
-    init,
-    updateMetrics,
-    updateHealthScore,
-    showExplanation,
-    hideExplanation,
-    resetChart
-  };
+  return { init, updateMetrics, updateHealthScore, showExplanation, hideExplanation, resetChart };
 })();
