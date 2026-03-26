@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CityAutoPilot v3 - 3D Dashboard</title>
+  
+  <!-- CDNs -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+  <style>
+    :root {
+      --bg-color: #0d0d0d;
+      --panel-bg: rgba(20, 20, 25, 0.65);
+      --text-main: #ffffff;
+      --text-muted: #a0a0aa;
+      --accent-blue: #0A84FF;
+      --accent-green: #30D158;
+      --accent-red: #FF3B30;
+      --accent-orange: #FF9500;
+      --border-color: rgba(255, 255, 255, 0.1);
+      --glass-shadow: 0 32px 64px rgba(0, 0, 0, 0.4);
+      --font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      font-family: var(--font-family);
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden; /* Canvas covers background */
+    }
+
+    /* Full-screen absolute canvas container */
+    #canvas-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      background: radial-gradient(circle at center, #1a1a24 0%, #000000 100%);
+    }
+
+    #city-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      outline: none;
+    }
+
+    /* UI Overlay Layer */
+    .app-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      pointer-events: none; /* Let clicks pass through to canvas natively */
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 40px;
+      pointer-events: auto;
+      background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%);
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 2rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      background: linear-gradient(90deg, #0A84FF, #30D158, #0A84FF);
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: shine 4s linear infinite;
+    }
+
+    @keyframes shine {
+      to { background-position: 200% center; }
+    }
+
+    .health-score {
+      font-size: 1.5rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      background: rgba(0,0,0,0.4);
+      padding: 10px 25px;
+      border-radius: 30px;
+      border: 1px solid var(--border-color);
+      backdrop-filter: blur(10px);
+    }
+
+    .health-score .val {
+      font-weight: 800;
+      font-size: 1.8rem;
+    }
+
+    main.dashboard-layout {
+      display: flex;
+      flex: 1;
+      justify-content: space-between;
+      padding: 0 40px 40px 40px;
+      gap: 40px;
+      min-height: 0; /* Ensures flex kids can scroll if needed */
+    }
+
+    .panel {
+      pointer-events: auto;
+      background: var(--panel-bg);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border-radius: 20px;
+      border: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--glass-shadow);
+      max-height: 100%;
+      overflow-y: auto;
+    }
+
+    /* Scrollbar minimalist */
+    .panel::-webkit-scrollbar { width: 6px; }
+    .panel::-webkit-scrollbar-track { background: transparent; }
+    .panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+
+    .controls-panel {
+      width: 320px;
+      padding: 30px;
+    }
+
+    .metrics-panel {
+      width: 360px;
+      padding: 30px;
+    }
+
+    h2 {
+      margin-top: 0;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 15px;
+      margin-bottom: 25px;
+    }
+
+    .radio-group {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      margin-bottom: 35px;
+    }
+
+    .radio-group label {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      font-size: 1.1rem;
+      padding: 12px 16px;
+      border-radius: 12px;
+      transition: all 0.3s;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid transparent;
+    }
+
+    .radio-group label:hover {
+      background: rgba(255,255,255,0.08);
+      border-color: rgba(255,255,255,0.2);
+      transform: translateX(5px);
+    }
+
+    input[type="radio"] {
+      accent-color: var(--accent-blue);
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+    }
+
+    .slider-group {
+      margin-bottom: 40px;
+      padding: 15px;
+      background: rgba(0,0,0,0.2);
+      border-radius: 12px;
+    }
+
+    .slider-group label {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 15px;
+      font-weight: 600;
+      font-size: 1.1rem;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 6px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 3px;
+      outline: none;
+      -webkit-appearance: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--accent-blue);
+      cursor: pointer;
+      box-shadow: 0 0 10px var(--accent-blue);
+    }
+
+    .action-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      margin-top: auto;
+    }
+
+    .btn {
+      padding: 15px;
+      border: none;
+      border-radius: 12px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn:active { transform: scale(0.96); }
+
+    .btn.primary {
+      background: linear-gradient(135deg, #0A84FF, #0044b3);
+      box-shadow: 0 8px 20px rgba(10, 132, 255, 0.3);
+    }
+    .btn.primary:hover {
+      background: linear-gradient(135deg, #2A9dFF, #005ce6);
+      box-shadow: 0 12px 25px rgba(10, 132, 255, 0.5);
+      transform: translateY(-2px);
+    }
+
+    .btn.warning {
+      background: linear-gradient(135deg, #FF9500, #d35400);
+      box-shadow: 0 8px 20px rgba(255, 149, 0, 0.3);
+    }
+    .btn.warning:hover {
+      background: linear-gradient(135deg, #ffa520, #e67e22);
+      box-shadow: 0 12px 25px rgba(255, 149, 0, 0.5);
+      transform: translateY(-2px);
+    }
+
+    .btn.secondary {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .btn.secondary:hover {
+      background: rgba(255,255,255,0.1);
+      transform: translateY(-2px);
+    }
+
+    .metric-card {
+      background: rgba(0,0,0,0.3);
+      padding: 18px 20px;
+      border-radius: 12px;
+      margin-bottom: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border: 1px solid rgba(255,255,255,0.05);
+      transition: transform 0.2s, background 0.2s;
+    }
+    .metric-card:hover {
+      background: rgba(0,0,0,0.5);
+      transform: scale(1.02);
+      border-color: rgba(255,255,255,0.15);
+    }
+
+    .metric-card span {
+      font-weight: 800;
+      font-size: 1.1rem;
+      text-shadow: 0 0 10px rgba(255,255,255,0.2);
+    }
+
+    .chart-container {
+      margin-top: 25px;
+      height: 220px;
+      width: 100%;
+      background: rgba(0,0,0,0.2);
+      border-radius: 12px;
+      padding: 10px;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    /* Floating 3D Explanation Popup */
+    .popup {
+      position: absolute;
+      background: rgba(10, 15, 25, 0.85);
+      border: 1px solid rgba(10, 132, 255, 0.5);
+      border-radius: 16px;
+      padding: 20px;
+      width: 280px;
+      box-shadow: 0 15px 45px rgba(0,0,0,0.7), 0 0 20px rgba(10, 132, 255, 0.2);
+      backdrop-filter: blur(15px);
+      z-index: 100;
+      pointer-events: auto;
+      opacity: 0;
+      transform: scale(0.9) translateY(20px);
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .popup.visible {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+
+    .popup h4 {
+      margin: 0 0 12px 0;
+      color: var(--accent-blue);
+      font-size: 1.2rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .popup p {
+      margin: 8px 0;
+      font-size: 0.95rem;
+      color: #ddd;
+      line-height: 1.4;
+    }
+
+    .popup .close-btn {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: rgba(255,255,255,0.1);
+      border: none;
+      color: #ccc;
+      cursor: pointer;
+      font-size: 1.2rem;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: 0.3s;
+    }
+
+    .popup .close-btn:hover {
+      background: var(--accent-red);
+      color: white;
+      transform: rotate(90deg);
+    }
+
+    .impact-stats {
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px dashed rgba(255,255,255,0.2);
+    }
+    
+    .impact-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 5px;
+      font-weight: 600;
+    }
+    .impact-row.good { color: var(--accent-green); }
+    .impact-row.neutral { color: var(--accent-orange); }
+
+  </style>
+</head>
+<body>
+
+  <!-- The 3D Canvas Layer -->
+  <div id="canvas-container">
+    <canvas id="city-canvas"></canvas>
+  </div>
+
+  <!-- The UI Overlay -->
+  <div class="app-layer">
+    <header>
+      <h1>CityAutoPilot v3</h1>
+      <div class="health-score">
+        HEALTH
+        <span class="val" id="health-score-val">--</span>
+        <span class="indicator" id="health-indicator">⚪</span>
+      </div>
+    </header>
+
+    <main class="dashboard-layout">
+      <!-- Left Controls -->
+      <section class="panel controls-panel">
+        <h2>Policy Engine</h2>
+        <div class="radio-group" id="policy-group">
+          <label><input type="radio" name="policy" value="balanced" checked> ⚖️ Balanced</label>
+          <label><input type="radio" name="policy" value="flood"> 🌊 Flood Mitigation</label>
+          <label><input type="radio" name="policy" value="heat"> 🌡️ Heat Reduction</label>
+          <label><input type="radio" name="policy" value="eco"> 🌿 Eco Corridor</label>
+        </div>
+        
+        <div class="slider-group">
+          <label for="budget-slider"><span>Budget Units</span> <span id="budget-display">25</span></label>
+          <input type="range" id="budget-slider" min="5" max="50" value="25" step="1">
+        </div>
+
+        <div class="action-buttons">
+          <button id="btn-simulate" class="btn primary">Simulate Rainfall 🌧</button>
+          <button id="btn-optimize" class="btn warning">Optimize City ⚡</button>
+          <button id="btn-reset" class="btn secondary">Reset 🔄</button>
+        </div>
+      </section>
+
+      <!-- Right Metrics -->
+      <section class="panel metrics-panel">
+        <h2>Real-Time Metrics</h2>
+        <div class="metric-card">Avg Temp <span id="val-temp">--°C</span></div>
+        <div class="metric-card">Flood Risk <span id="val-flood">--</span></div>
+        <div class="metric-card">Energy Load <span id="val-energy">--</span></div>
+        <div class="metric-card">Biodiversity <span id="val-biodiv">--</span></div>
+        <div class="metric-card">Budget Used <span id="val-budget">--</span></div>
+        
+        <div class="chart-container">
+          <canvas id="score-chart"></canvas>
+        </div>
+      </section>
+    </main>
+
+    <!-- Overlay Popup -->
+    <div id="explanation-popup" class="popup">
+      <button class="close-btn" id="btn-close-popup">×</button>
+      <h4 id="exp-title">⚡ Intervention</h4>
+      <p id="exp-reason" style="font-style: italic; opacity: 0.8;">Reason</p>
+      <div class="impact-stats" id="exp-impact">
+        <!-- JS fills -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Backend Engines -->
+  <script src="data/constants.js"></script>
+  <script src="data/tnagar_base_grid.js"></script>
+  <script src="modules/gridEngine.js"></script>
+  <script src="modules/simulationEngine.js"></script>
+  <script src="modules/metricsEngine.js"></script>
+  <script src="modules/constraintEngine.js"></script>
+  <script src="modules/policyEngine.js"></script>
+  <script src="modules/explainabilityEngine.js"></script>
+  <script src="modules/optimizationEngine.js"></script>
+
+  <!-- UI & Main -->
+  <script src="ui/canvas.js"></script>
+  <script src="ui/panels.js"></script>
+  <script src="ui/uiController.js"></script>
+  <script src="main.js"></script>
+
+</body>
+</html>
